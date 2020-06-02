@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import AVFoundation
 
 class ViewController: UIViewController {
     @IBOutlet weak var titleLabel: UILabel!
@@ -14,6 +15,8 @@ class ViewController: UIViewController {
     
     let eggTimes: [String:Double] = ["Soft": 5.0, "Medium": 7, "Hard": 12]
     var timer: Timer? = nil
+    var alarmPlayer: AVAudioPlayer? = nil
+    let intoSeconds = 60.0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -23,17 +26,24 @@ class ViewController: UIViewController {
     @IBAction func hardnessSelected(_ sender: UIButton) {
         timer?.invalidate()
         guard let hardness = sender.titleLabel?.text else { return }
-        guard let totalTime = eggTimes[hardness] else { return }
+        guard var totalTime = eggTimes[hardness] else { return }
+        totalTime = totalTime * intoSeconds
         var remainingTime = totalTime
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { (Timer) in
             self.updateProgressBar(totalTime, remainingTime)
-            if remainingTime == 0 {
+            if remainingTime == -1 {
                 self.timer?.invalidate()
                 self.titleLabel.text = "Done!"
-                // play alarm sound
+                self.playAlarm()
+                self.reset()
             }
             remainingTime-=1
         })
+    }
+    
+    func reset() {
+        titleLabel.text = "How do you like your eggs?"
+        progressBar.progress = 0.0
     }
     
     func updateProgressBar(_ totalTime: Double, _ remainingTime: Double) {
@@ -41,7 +51,14 @@ class ViewController: UIViewController {
     }
     
     func playAlarm() {
-        
+        guard let path = Bundle.main.path(forResource: "alarm_sound.mp3", ofType: nil) else { return }
+        let url = URL(fileURLWithPath: path)
+        do {
+            alarmPlayer = try AVAudioPlayer(contentsOf: url)
+            alarmPlayer?.play()
+        } catch {
+            print("Cannot play alarm sound!")
+        }
     }
     
 }
